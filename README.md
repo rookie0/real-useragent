@@ -77,3 +77,7 @@ var_dump($ua->collect($category, $name, $orderBy, $refresh));
 
 ```
 
+## License
+
+[MIT](https://github.com/rookie0/real-useragent/blob/master/LICENSE)
+

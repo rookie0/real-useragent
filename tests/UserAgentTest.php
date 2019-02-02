@@ -17,7 +17,7 @@ class UserAgentTest extends TestCase
 
     public function testRandom()
     {
-        $this->assertNotNull(self::$ua->random());
+        $this->assertNotFalse(self::$ua->random());
     }
 
     public function testProperties()

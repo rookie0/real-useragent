@@ -55,7 +55,7 @@ class UserAgent
     /**
      * @var int
      */
-    protected $pageNum = 3;
+    protected $pageNum = 1;
 
     /**
      * request timeout sec
@@ -110,32 +110,38 @@ class UserAgent
             return $data;
         }
 
-        // concurrency request
-        $requests = function ($total) use ($category, $name, $orderBy) {
-            for ($i = 1; $i < $total + 1; $i++) {
-                yield function () use ($i, $category, $name, $orderBy) {
-                    return self::$httpClient->getAsync("{$category}/{$name}/{$i}?order_by={$orderBy}");
-                };
-            }
-        };
-
         $data = [];
-        $pool = new Pool(self::$httpClient, $requests($this->pageNum), [
-            // concurrency limit
-            'concurrency' => 3,
-            'fulfilled'   => function (Response $response, $index) use (&$data) {
-                if ($response->getStatusCode() == 200) {
-                    $data = array_merge($data, $this->extractUserAgent($response->getBody()->getContents()));
-                } else {
-                    // todo log
-                }
-            },
-            'rejected'    => function ($reason, $index) {
-                // todo log reason
-                throw $reason;
-            },
-        ]);
-        $pool->promise()->wait();
+        for ($i = 1; $i < $this->pageNum + 1; $i++) {
+            $resp = self::$httpClient->get("{$category}/{$name}/{$i}?order_by={$orderBy}");
+            $data = array_merge($data, $this->extractUserAgent($resp->getBody()->getContents()));
+        }
+
+//        // concurrency request
+//        $requests = function ($total) use ($category, $name, $orderBy) {
+//            for ($i = 1; $i < $total + 1; $i++) {
+//                yield function () use ($i, $category, $name, $orderBy) {
+//                    return self::$httpClient->getAsync("{$category}/{$name}/{$i}?order_by={$orderBy}");
+//                };
+//            }
+//        };
+//
+//        $data = [];
+//        $pool = new Pool(self::$httpClient, $requests($this->pageNum), [
+//            // concurrency limit
+//            'concurrency' => 3,
+//            'fulfilled'   => function (Response $response, $index) use (&$data) {
+//                if ($response->getStatusCode() == 200) {
+//                    $data = array_merge($data, $this->extractUserAgent($response->getBody()->getContents()));
+//                } else {
+//                    // todo log
+//                }
+//            },
+//            'rejected'    => function ($reason, $index) {
+//                // todo log reason
+//                throw $reason;
+//            },
+//        ]);
+//        $pool->promise()->wait();
 
         $this->cache->set($cacheKey, $data, $this->cacheTtl);
 
